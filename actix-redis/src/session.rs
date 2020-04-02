@@ -266,14 +266,15 @@ impl Inner {
                                         RespValue::BulkString(s) => {
                                             println!("Redis value is a BulkString");
                                             if let Ok(val) = serde_json::from_slice(&s) {
-                                                println!("Converted Redis value successfully");
+                                                println!("Converted Redis value successfully. Values:");
+                                                println!("{:?}", val);
                                                 return Ok(Some((val, value)));
                                             }
                                         }
                                         _ => (),
                                     }
 
-                                    println!("Returning None due to invalid Redis value");
+                                    println!("Returning None due to invalid Redis value of {:?}", val);
                                     Ok(None)
                                 }
                                 Err(err) => Err(error::ErrorInternalServerError(err)),
