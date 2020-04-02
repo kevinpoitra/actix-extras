@@ -352,13 +352,13 @@ impl Inner {
             Ok(body) => {
                 match self
                     .addr
-                    .send(Command(resp_array!["SET", cachekey, body, "EX", &self.ttl]))
+                    .send(Command(resp_array!["SET", cachekey.clone(), body, "EX", &self.ttl]))
                     .await
                 {
                     Err(e) => Err(Error::from(e)),
                     Ok(redis_result) => match redis_result {
                         Ok(_) => {
-                            println!("Sucessfully set redis value for key {}", cachekey);
+                            println!("Sucessfully set redis value for key {}", &cachekey);
                             if let Some(jar) = jar {
                                 for cookie in jar.delta() {
                                     let val =
