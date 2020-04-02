@@ -220,20 +220,34 @@ impl Inner {
         &self,
         req: &ServiceRequest,
     ) -> Result<Option<(HashMap<String, String>, String)>, Error> {
+        println!("In RedisSession Inner.load");
         if let Ok(cookies) = req.cookies() {
+            println!("Loaded {} cookies", cookies.len());
+            println!("Looking for cookie {}", self.name);
+
             for cookie in cookies.iter() {
+                println!("Cookie: Name: {} Value: {}", cookie.name(), cookie.value());
                 if cookie.name() == self.name {
+                    println!("Found cookie!");
                     let mut jar = CookieJar::new();
                     jar.add_original(cookie.clone());
                     if let Some(cookie) = jar.signed(&self.key).get(&self.name) {
+                        println!("Cookie retrieved from jar");
+
                         let value = cookie.value().to_owned();
                         let cachekey = (self.cache_keygen)(&cookie.value());
+
+                        println!("Looking for cache key: {}", cachekey);
+
                         return match self
                             .addr
                             .send(Command(resp_array!["GET", cachekey]))
                             .await
                         {
-                            Err(e) => Err(Error::from(e)),
+                            Err(e) => {
+                                println!("Failed to call Redis GET command");
+                                Err(Error::from(e))
+                            },
                             Ok(res) => match res {
                                 Ok(val) => {
                                     match val {
@@ -243,28 +257,37 @@ impl Inner {
                                             );
                                         }
                                         RespValue::SimpleString(s) => {
+                                            println!("Redis value is a SimpleString");
                                             if let Ok(val) = serde_json::from_str(&s) {
+                                                println!("Converted Redis value successfully");
                                                 return Ok(Some((val, value)));
                                             }
                                         }
                                         RespValue::BulkString(s) => {
+                                            println!("Redis value is a BulkString");
                                             if let Ok(val) = serde_json::from_slice(&s) {
+                                                println!("Converted Redis value successfully");
                                                 return Ok(Some((val, value)));
                                             }
                                         }
                                         _ => (),
                                     }
+
+                                    println!("Returning None due to invalid Redis value");
                                     Ok(None)
                                 }
                                 Err(err) => Err(error::ErrorInternalServerError(err)),
                             },
                         };
                     } else {
+                        println!("Returning None from not finding the cookie within the jar");
                         return Ok(None);
                     }
                 }
             }
         }
+
+        println!("Failed to get cookies, returning None");
         Ok(None)
     }
 
