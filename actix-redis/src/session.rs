@@ -256,16 +256,16 @@ impl Inner {
                                                 error::ErrorInternalServerError(err),
                                             );
                                         }
-                                        RespValue::SimpleString(s) => {
+                                        RespValue::SimpleString(ref s) => {
                                             println!("Redis value is a SimpleString");
-                                            if let Ok(val) = serde_json::from_str(&s) {
+                                            if let Ok(val) = serde_json::from_str(s) {
                                                 println!("Converted Redis value successfully");
                                                 return Ok(Some((val, value)));
                                             }
                                         }
-                                        RespValue::BulkString(s) => {
+                                        RespValue::BulkString(ref s) => {
                                             println!("Redis value is a BulkString");
-                                            if let Ok(val) = serde_json::from_slice(&s) {
+                                            if let Ok(val) = serde_json::from_slice(s) {
                                                 println!("Converted Redis value successfully. Values:");
                                                 println!("{:?}", val);
                                                 return Ok(Some((val, value)));
