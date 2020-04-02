@@ -350,6 +350,7 @@ impl Inner {
         match serde_json::to_string(&state) {
             Err(e) => Err(e.into()),
             Ok(body) => {
+                println!("Setting session key {} with value {}", &cachekey, &body);
                 match self
                     .addr
                     .send(Command(resp_array!["SET", cachekey.clone(), body, "EX", &self.ttl]))
