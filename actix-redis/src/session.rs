@@ -164,19 +164,26 @@ where
             let mut res = srv.call(req).await?;
 
             match Session::get_changes(&mut res) {
-                (SessionStatus::Unchanged, None) => Ok(res),
+                (SessionStatus::Unchanged, None) => {
+                    println!("SessionStatus is Unchanged, no old session exists");
+                    Ok(res)
+                },
                 (SessionStatus::Unchanged, Some(state)) => {
                     if value.is_none() {
+                        println!("SessionStatus is Unchanged, saving new session");
                         // implies the session is new
                         inner.update(res, state, value).await
                     } else {
+                        println!("SessionStatus is Unchanged, old session exists");
                         Ok(res)
                     }
                 }
                 (SessionStatus::Changed, Some(state)) => {
+                    println!("SessionStatus is Changed");
                     inner.update(res, state, value).await
                 }
                 (SessionStatus::Purged, Some(_)) => {
+                    println!("SessionStatus is Purged");
                     if let Some(val) = value {
                         inner.clear_cache(val).await?;
                         match inner.remove_cookie(&mut res) {
@@ -188,6 +195,7 @@ where
                     }
                 }
                 (SessionStatus::Renewed, Some(state)) => {
+                    println!("SessionStatus is Renewed");
                     if let Some(val) = value {
                         inner.clear_cache(val).await?;
                         inner.update(res, state, None).await
