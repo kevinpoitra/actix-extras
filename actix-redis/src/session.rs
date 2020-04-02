@@ -306,9 +306,12 @@ impl Inner {
         state: impl Iterator<Item = (String, String)>,
         value: Option<String>,
     ) -> Result<ServiceResponse<B>, Error> {
+        println!("In session::update");
         let (value, jar) = if let Some(value) = value {
+            println!("Old value exists, not providing jar or sending new cookie");
             (value, None)
         } else {
+            println!("Old value doesn't exist, sending new cookie");
             let value: String = iter::repeat(())
                 .map(|()| OsRng.sample(Alphanumeric))
                 .take(32)
@@ -341,6 +344,8 @@ impl Inner {
 
         let cachekey = (self.cache_keygen)(&value);
 
+        println!("cachekey: {}", cachekey);
+
         let state: HashMap<_, _> = state.collect();
         match serde_json::to_string(&state) {
             Err(e) => Err(e.into()),
@@ -353,6 +358,7 @@ impl Inner {
                     Err(e) => Err(Error::from(e)),
                     Ok(redis_result) => match redis_result {
                         Ok(_) => {
+                            println!("Sucessfully set redis value for key {}", cachekey);
                             if let Some(jar) = jar {
                                 for cookie in jar.delta() {
                                     let val =
